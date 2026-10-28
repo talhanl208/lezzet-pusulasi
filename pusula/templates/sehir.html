@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% import "_makrolar.html" as mk with context %}
+{% block baslik %}{{ sehir.ad }} restoranları · Lezzet Pusulası{% endblock %}
+{% block bas %}
+{% if harita_modu == 'leaflet' %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+{% endif %}
+{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <div class="sehir-bas">
+    <div>
+      <span class="plaka"><span class="tr">TR</span><span class="yazi">{{ '%02d'|format(sehir.plaka) }}</span></span>
+      <h1>{{ sehir.ad }} restoranları</h1>
+      <div class="ozet">{{ toplam }} mekan tarandı{% if sehir.son_tarama %}, {{ sehir.son_tarama|once }} güncellendi{% endif %}</div>
+    </div>
+    <div class="eylemler">
+      <a class="dugme" href="{{ url_for('pusula.rastgele', slug=sehir.slug) }}?{{ sorgu }}">Bugün ne yesek?</a>
+      <a class="dugme ikincil" href="{{ url_for('pusula.csv_indir', slug=sehir.slug) }}?{{ sorgu }}">Listeyi indir (CSV)</a>
+      <form method="post" action="{{ url_for('pusula.tara') }}">
+        <input type="hidden" name="sehir" value="{{ sehir.ad }}"><input type="hidden" name="zorla" value="1">
+        <button class="dugme ikincil" type="submit">Yeniden tara</button>
+      </form>
+    </div>
+  </div>
+
+  {% if il and il.yoresel %}
+  <div class="yoresel">
+    <b>Buraya gelmişken:</b>
+    {% for yemek in il.yoresel %}
+      <a class="cip {% if f.q|lower == yemek|lower %}secili{% endif %}" href="{{ url_for('pusula.sehir', slug=sehir.slug, q=yemek) }}">{{ yemek }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="duzen">
+    <details class="filtreler" open id="filtre-paneli">
+      <summary>Filtreler {% if f.aktif_sayisi() %}({{ f.aktif_sayisi() }}){% endif %} <span class="ac-kapa">▾</span></summary>
+      <form id="filtre-form" method="get" action="{{ url_for('pusula.sehir', slug=sehir.slug) }}">
+        <input type="hidden" name="ref" value="{{ f.ref }}">
+        <input type="hidden" name="lat" value="{{ f.lat or '' }}">
+        <input type="hidden" name="lng" value="{{ f.lng or '' }}">
+        <div class="filtre-grup">
+          <label class="etiket" for="q">Mekan veya yemek ara</label>
+          <input class="alan" id="q" name="q" value="{{ f.q }}" placeholder="ör. iskender, künefe">
+        </div>
+
+        <fieldset class="filtre-grup">
+          <legend>Tür</legend>
+          <div class="secim-listesi">
+          {% for kod, (ad, emoji) in KATEGORILER.items() if kat_sayilari.get(kod) %}
+            <label class="secim"><input type="checkbox" name="kat" value="{{ kod }}" {% if kod in f.kategoriler %}checked{% endif %}> {{ emoji }} {{ ad }} <span class="adet">{{ kat_sayilari[kod] }}</span></label>
+          {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="filtre-grup">
+          <legend>Fiyat</legend>
+          <div class="fiyat-kutulari">
+            {% for s in [1, 2, 3, 4] %}
+            <label><input type="checkbox" name="fiyat" value="{{ s }}" {% if s in f.fiyatlar %}checked{% endif %}><span title="{{ ['', 'Ucuz', 'Orta', 'Pahalı', 'Çok pahalı'][s] }}">{{ '₺' * s }}</span></label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="filtre-grup">
+          <legend>Puan ve popülerlik</legend>
+          <div class="iki-alan">
+            <label>En az Google
+              <select class="alan" name="min_g">
+                <option value="">Hepsi</option>
+                {% for v in [4.0, 4.3, 4.5, 4.7] %}<option value="{{ v }}" {% if f.min_google == v %}selected{% endif %}>{{ v|virgul }}+</option>{% endfor %}
+              </select>
+            </label>
+            <label>En az Pusula
+              <select class="alan" name="min_p">
+                <option value="">Hepsi</option>
+                {% for v in [6, 7, 8] %}<option value="{{ v }}" {% if f.min_puan == v %}selected{% endif %}>{{ v }}+</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+          <label class="secim" style="margin-top:10px">En az
+            <select class="alan" name="min_yorum" style="width:auto">
+              <option value="">0</option>
+              {% for v in [50, 200, 1000] %}<option value="{{ v }}" {% if f.min_yorum == v %}selected{% endif %}>{{ v|bin }}</option>{% endfor %}
+            </select> yorum
+          </label>
+        </fieldset>
+
+        <fieldset class="filtre-grup">
+          <legend>Öne çıkanlar</legend>
+          <div class="secim-listesi">
+            {% for kod in ['gizli_hazine', 'favori', 'yukseliste', 'uygun_fiyat'] %}
+            <label class="secim"><input type="checkbox" name="rozet" value="{{ kod }}" {% if kod in f.rozetler %}checked{% endif %}> {{ ROZETLER[kod][0] }} {{ ROZETLER[kod][1] }}</label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="filtre-grup">
+          <legend>Özellikler</legend>
+          <div class="secim-listesi">
+            <label class="secim"><input type="checkbox" name="acik" value="1" {% if f.acik %}checked{% endif %}> Şu an açık</label>
+            {% for kod, ad in OZELLIKLER.items() %}
+            <label class="secim"><input type="checkbox" name="oz" value="{{ kod }}" {% if kod in f.ozellikler %}checked{% endif %}> {{ ad }}</label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="filtre-grup">
+          <legend>Konum</legend>
+          {% if ilceler|length > 1 %}
+          <label class="etiket gizli-metin" for="ilce">İlçe</label>
+          <select class="alan" id="ilce" name="ilce" style="margin-bottom:8px">
+            <option value="">Tüm ilçeler</option>
+            {% for i in ilceler %}<option {% if f.ilce == i %}selected{% endif %}>{{ i }}</option>{% endfor %}
+          </select>
+          {% endif %}
+          <label class="secim">En fazla
+            <select class="alan" name="max_km" style="width:auto">
+              <option value="">— km</option>
+              {% for v in [1, 2, 5, 10] %}<option value="{{ v }}" {% if f.max_km == v %}selected{% endif %}>{{ v }} km</option>{% endfor %}
+            </select> uzaklıkta
+          </label>
+          <p class="kucuk-not">Uzaklık {% if f.ref == 'konum' %}bulunduğun konuma{% elif f.ref == 'nokta' %}haritada seçtiğin noktaya{% else %}şehir merkezine{% endif %} göre.
+            <button type="button" class="metin-dugme" id="konumum">Konumumu kullan</button>
+            · <button type="button" class="metin-dugme" id="nokta-sec">Haritada nokta seç</button>
+            {% if f.ref != 'merkez' %} · <button type="button" class="metin-dugme" id="merkeze-don">Merkeze dön</button>{% endif %}
+          </p>
+        </fieldset>
+
+        <noscript><button class="dugme" type="submit">Filtrele</button></noscript>
+        {% if f.aktif_sayisi() %}<a href="{{ url_for('pusula.sehir', slug=sehir.slug) }}">Filtreleri temizle</a>{% endif %}
+      </form>
+
+      <details class="agirliklar" {% if session.get('agirlik') %}open{% endif %}>
+        <summary>Puanlamayı kişiselleştir</summary>
+        <p class="kucuk-not">Senin için hangisi daha önemli? Pusula Puanı bu ağırlıklarla yeniden hesaplanır.</p>
+        <form method="post" action="{{ url_for('pusula.puan_ayarla') }}">
+          <input type="hidden" name="geri" value="{{ request.full_path }}">
+          {% for kod, ad in KRITERLER.items() %}
+          <label class="kaydirici"><span>{{ ad }}</span><output>{{ agirlik[kod] }}</output>
+            <input type="range" name="{{ kod }}" min="0" max="100" step="5" value="{{ agirlik[kod] }}"></label>
+          {% endfor %}
+          <label class="kaydirici"><span>Google puanının payı</span><output>%{{ google_payi }}</output>
+            <input type="range" name="google" min="0" max="100" step="5" value="{{ google_payi }}" data-yuzde></label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="dugme kucuk" type="submit">Uygula</button>
+            <button class="dugme kucuk ikincil" type="submit" name="sifirla" value="1">Varsayılana dön</button>
+          </div>
+        </form>
+      </details>
+    </details>
+
+    <section aria-label="Sonuçlar">
+      <div class="arac-cubugu">
+        <span class="sonuc" aria-live="polite">{% if eslesen != toplam %}{{ eslesen }} / {{ toplam }} mekan eşleşti{% else %}{{ toplam }} mekan{% endif %}</span>
+        <div class="sag">
+          <label class="gizli-metin" for="sirala">Sıralama</label>
+          <select class="alan" id="sirala" name="sirala" form="filtre-form" data-sirala>
+            {% for kod, ad in SIRALAMALAR.items() %}<option value="{{ kod }}" {% if f.sirala == kod %}selected{% endif %}>{{ ad }}</option>{% endfor %}
+          </select>
+          <div class="gorunum" role="group" aria-label="Görünüm">
+            <button type="button" data-gorunum="liste" aria-pressed="true">Liste</button>
+            <button type="button" data-gorunum="harita" aria-pressed="false">Harita</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="harita-kutu" id="harita" hidden data-mod="{{ harita_modu }}">
+        {% if harita_modu == 'yok' %}
+        <div class="harita-yok"><p>Haritayı açmak için <code>.env</code> dosyasına <code>GOOGLE_MAPS_JS_KEY</code> ekleyin.<br><small>Google'ın kullanım şartları gereği Google verisi yalnızca Google haritasında gösterilebilir.</small></p></div>
+        {% endif %}
+      </div>
+
+      {% if mekanlar %}
+      <ol class="sonuclar">
+        {% for m in mekanlar %}{{ mk.satir(m) }}{% endfor %}
+      </ol>
+      {% if eslesen > mekanlar|length %}
+      <div class="daha-fazla"><a class="dugme ikincil" href="{{ url_for('pusula.sehir', slug=sehir.slug) }}?{{ sorgu_ile(n=f.n + 50) }}">{{ [50, eslesen - mekanlar|length]|min }} mekan daha göster</a></div>
+      {% endif %}
+      {% else %}
+      <div class="bos sonuclar">
+        <h3>Bu filtrelere uyan mekan yok</h3>
+        <p>Birkaç filtreyi kaldırın ya da aramayı genişletin.</p>
+        <a class="dugme ikincil" href="{{ url_for('pusula.sehir', slug=sehir.slug) }}">Filtreleri temizle</a>
+      </div>
+      {% endif %}
+
+      <form id="karsilastir-form" method="get" action="{{ url_for('pusula.karsilastir') }}"></form>
+      <div class="karsilastir-cubugu" hidden id="karsilastir-cubugu">
+        <button class="dugme" type="submit" form="karsilastir-form">Seçilenleri karşılaştır (<span>0</span>)</button>
+      </div>
+    </section>
+  </div>
+</div>
+<script type="application/json" id="harita-verisi">{{ harita|safe }}</script>
+{% endblock %}
+{% block betik %}
+{% if harita_modu == 'leaflet' %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>{% endif %}
+{% include "_harita_betik.html" %}
+{% endblock %}

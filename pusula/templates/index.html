@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block icerik %}
+<section class="kahraman">
+  <div class="kap">
+    <h1>Hangi şehre gidiyorsun?</h1>
+    <p class="giris">Şehri yaz, oradaki restoranları Google puanları ve yorumlarıyla birlikte getirelim. Her mekan için artıları, eksileri, menüsünü ve kendi Pusula Puanımızı tek listede gör.</p>
+
+    <form class="plaka-form" method="post" action="{{ url_for('pusula.tara') }}">
+      <div class="plaka-giris">
+        <div class="tr" aria-hidden="true">TR</div>
+        <label for="sehir" class="gizli-metin">Şehir adı veya plaka kodu</label>
+        <input id="sehir" name="sehir" list="iller" required autocomplete="off" value="{{ secili }}"
+               placeholder="İstanbul, Konya ya da 42">
+        <button class="dugme" type="submit">Restoranları getir</button>
+      </div>
+      <datalist id="iller">{% for il in iller %}<option value="{{ il.ad }}">{{ '%02d'|format(il.plaka) }}</option>{% endfor %}</datalist>
+      <div class="ek-alanlar">
+        <label>Semt veya ilçe (isteğe bağlı)
+          <input class="alan" name="bolge" placeholder="ör. Kadıköy" maxlength="40">
+        </label>
+        <label>Kaç mekan
+          <select class="alan" name="hedef">
+            {% for n in [30, 50, 80, 120] %}<option value="{{ n }}" {% if n == hedef %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+    </form>
+
+    {% if taranmis %}
+    <h2 style="margin-top:44px">Daha önce bakılan şehirler</h2>
+    <ul class="plakalar">
+      {% for s in taranmis %}
+      <li><a class="plaka" href="{{ url_for('pusula.sehir', slug=s.slug) }}"><span class="tr">TR</span><span class="yazi">{{ '%02d'|format(s.plaka) }} {{ s.ad }}<small>{{ s.mekan_sayisi }} mekan</small></span></a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+<section class="bolum">
+  <div class="kap">
+    <h2>Pusula Puanı nasıl hesaplanıyor?</h2>
+    <div class="uc-kolon">
+      <div>
+        <h3>Güvenilir Google puanı</h3>
+        <p>12 yorumlu 5,0 ile 8.000 yorumlu 4,6 aynı kefeye konmaz. Az yorumlu mekanların puanı şehir ortalamasına doğru çekilir.</p>
+      </div>
+      <div>
+        <h3>Yorumlardan kriter puanları</h3>
+        <p>Yorumlar okunup lezzet, fiyat/performans, servis, temizlik, ortam ve hız için ayrı ayrı 1–10 puan çıkarılır. Hangisinin daha önemli olduğuna sen karar verirsin.</p>
+      </div>
+      <div>
+        <h3>Son dönem eğilimi</h3>
+        <p>Son 6 ayın yorumları genel puandan belirgin şekilde iyi ya da kötüyse puan buna göre biraz yukarı ya da aşağı kayar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

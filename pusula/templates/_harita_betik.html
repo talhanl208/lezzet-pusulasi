@@ -1,0 +1,5 @@
+<script src="{{ url_for('static', filename='js/harita.js') }}"></script>
+{% if harita_modu == 'google' %}
+<script async src="https://maps.googleapis.com/maps/api/js?key={{ config.GOOGLE_MAPS_JS_KEY }}&loading=async&libraries=marker&language=tr&region=TR&callback=pusulaGoogleHazir"></script>
+<script>document.querySelectorAll('[data-mod="google"]').forEach(function (k) { k.dataset.mapId = {{ config.GOOGLE_MAP_ID|tojson }}; });</script>
+{% endif %}

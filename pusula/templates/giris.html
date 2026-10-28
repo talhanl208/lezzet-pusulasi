@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block baslik %}Giriş · Lezzet Pusulası{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <div class="is-kutu" style="max-width:420px">
+    <h1 style="font-size:2rem">Giriş</h1>
+    <p>Bu uygulama özel. Devam etmek için şifreyi yaz.</p>
+    {% if hata %}<div class="bildirim" role="alert">{{ hata }}</div>{% endif %}
+    <form method="post" action="{{ url_for('pusula.giris', sonra=sonra) }}" style="display:grid; gap:12px">
+      <label for="sifre" class="gizli-metin">Şifre</label>
+      <input class="alan" id="sifre" name="sifre" type="password" autocomplete="current-password" required autofocus placeholder="Şifre">
+      <button class="dugme" type="submit" style="justify-content:center">Giriş yap</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

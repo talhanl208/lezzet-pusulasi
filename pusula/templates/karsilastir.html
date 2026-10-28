@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "_makrolar.html" as mk with context %}
+{% block baslik %}Karşılaştır · Lezzet Pusulası{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <h1 style="margin-top:28px">Karşılaştır</h1>
+  <div class="tablo-kaydir">
+    <table class="karsilastir-tablo">
+      <thead>
+        <tr><td></td>{% for m in mekanlar %}<th scope="col" class="{{ 'kazanan' if m.id == en_iyi }}"><a href="{{ url_for('pusula.mekan', mekan_id=m.id) }}">{{ m.ad }}</a></th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Pusula Puanı</th>{% for m in mekanlar %}<td class="{{ 'kazanan' if m.id == en_iyi }}">{{ mk.kadran(m.puan, etiket=False) }}{% if m.id == en_iyi %}<div><b>En yüksek puan</b></div>{% endif %}</td>{% endfor %}</tr>
+        <tr><th scope="row">Google</th>{% for m in mekanlar %}<td>{{ mk.google(m) }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Tür</th>{% for m in mekanlar %}<td>{{ m.kategori|kat_emoji }} {{ m.kategori|kat_adi }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Fiyat</th>{% for m in mekanlar %}<td>{{ m.fiyat_etiketi or '–' }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Şu an</th>{% for m in mekanlar %}<td>{% if m.acik is true %}<span class="acik" style="color:var(--turkuaz)">Açık</span>{% elif m.acik is false %}Kapalı{% else %}–{% endif %}</td>{% endfor %}</tr>
+        {% for kod, ad in KRITERLER.items() %}
+        <tr><th scope="row">{{ ad }}</th>
+          {% for m in mekanlar %}{% set d = ((m.analiz or {}).kriterler or {}).get(kod) %}
+          <td>{% if d %}<span class="mini-puan {{ d|renk }}">{{ d }}</span>{% else %}–{% endif %}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+        <tr><th scope="row">Artılar</th>{% for m in mekanlar %}<td><ul class="madde arti">{% for x in ((m.analiz or {}).artilar or [])[:3] %}<li>{{ x }}</li>{% endfor %}</ul></td>{% endfor %}</tr>
+        <tr><th scope="row">Eksiler</th>{% for m in mekanlar %}<td>{% set eks = ((m.analiz or {}).eksiler or [])[:3] %}{% if eks %}<ul class="madde eksi">{% for x in eks %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<span class="kucuk-not">Tekrar eden şikayet yok</span>{% endif %}</td>{% endfor %}</tr>
+        <tr><th scope="row">Öne çıkan</th>{% for m in mekanlar %}<td>{{ ((m.analiz or {}).one_cikan_lezzetler or [])|join(', ') or '–' }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Rozetler</th>{% for m in mekanlar %}<td><div class="alt-satir">{{ mk.rozetler(m) }}</div></td>{% endfor %}</tr>
+        <tr><th scope="row"></th>{% for m in mekanlar %}<td>{{ mk.liste_dugmesi(m) }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

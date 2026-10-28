@@ -1,0 +1,72 @@
+{% macro kadran(puan, etiket=True) -%}
+{%- set p = puan.puan if puan else None -%}
+{%- set cevre = 169.65 -%}
+<svg class="kadran {{ p|renk }}" viewBox="0 0 64 64" role="img" aria-label="Pusula Puanı {{ p|virgul if p is not none else 'yok' }}">
+  <circle class="iz" cx="32" cy="32" r="27"/>
+  {% if p is not none %}<circle class="dolu" cx="32" cy="32" r="27" stroke-dasharray="{{ '%.1f'|format(p / 10 * cevre) }} {{ cevre }}" transform="rotate(-90 32 32)"/>{% endif %}
+  <line class="cizik" x1="32" y1="1.5" x2="32" y2="6"/><line class="cizik" x1="62.5" y1="32" x2="58" y2="32"/>
+  <line class="cizik" x1="32" y1="62.5" x2="32" y2="58"/><line class="cizik" x1="1.5" y1="32" x2="6" y2="32"/>
+  <text x="32" y="38" text-anchor="middle">{{ p|virgul if p is not none else '–' }}</text>
+</svg>
+{%- if etiket %}<span class="etiket">Pusula</span>{% endif %}
+{%- endmacro %}
+
+{% macro google(m) -%}
+{% if m.google_puan %}<span class="google-puan" title="Google puanı ve değerlendirme sayısı"><span class="yildiz" aria-hidden="true">★</span> <b>{{ m.google_puan|virgul }}</b> ({{ m.yorum_sayisi|bin }})<span class="gizli-metin"> Google değerlendirmesi</span></span>{% endif %}
+{%- endmacro %}
+
+{% macro rozetler(m) -%}
+{% for kod in m.rozetler %}{% set r = ROZETLER[kod] %}<span class="rozet {{ kod }}" title="{{ r[2] }}"><span aria-hidden="true">{{ r[0] }}</span>{{ r[1] }}</span>{% endfor %}
+{%- endmacro %}
+
+{% macro liste_dugmesi(m) -%}
+{% set ekli = m.id in gezi_listesi %}
+<form method="post" action="{{ url_for('pusula.liste_degistir', mekan_id=m.id) }}" class="liste-form">
+  <button type="submit" class="liste-dugme" aria-pressed="{{ 'true' if ekli else 'false' }}">{{ 'Listemde' if ekli else 'Listeme ekle' }}</button>
+</form>
+{%- endmacro %}
+
+{% macro menu_izi(m) -%}
+{% set menu = m.menu or {} %}
+{% if menu.durum == 'bulundu' %}
+  <span class="menu-izi">📋 Menü {% if menu.ay_once is not none %}{{ menu.en_yeni_tarih|once }}{% else %}bulundu{% endif %}{% if menu.ortalama_fiyat %}, ana yemek ~₺{{ menu.ortalama_fiyat }}{% endif %}</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro satir(m, demo=False) -%}
+{% set a = m.analiz or {} %}
+<li class="satir" id="m{{ m.id }}">
+  <a href="{{ url_for('pusula.mekan', mekan_id=m.id) }}" tabindex="-1" aria-hidden="true">
+    {% if m.kapak %}<img class="kapak" src="{{ url_for('pusula.foto', foto_id=m.kapak) }}" alt="" loading="lazy">{% else %}<div class="kapak"></div>{% endif %}
+  </a>
+  <div class="govde">
+    <h3><a href="{{ url_for('pusula.mekan', mekan_id=m.id) }}">{{ m.ad }}</a>{% if m.kaynak == 'demo' %}<span class="demo-etiket">demo</span>{% endif %}</h3>
+    <div class="kunye">
+      <span>{{ m.kategori|kat_emoji }} {{ m.kategori|kat_adi }}</span>
+      {% if m.ilce %}<span>{{ m.ilce }}</span>{% endif %}
+      {% if m.fiyat_etiketi %}<span title="Kişi başı fiyat">{{ m.fiyat_etiketi }}</span>{% endif %}
+      {% if m.mesafe is not none %}<span>{{ m.mesafe|mesafe }}</span>{% endif %}
+      {% if m.acik is true %}<span class="acik">Şu an açık</span>{% elif m.acik is false %}<span class="kapali">Şu an kapalı</span>{% endif %}
+    </div>
+    {% if a.ozet %}<p class="oz">{{ a.ozet }}</p>{% endif %}
+    {% if a.artilar or a.eksiler %}
+    <ul class="arti-eksi">
+      {% for x in (a.artilar or [])[:2] %}<li class="arti">{{ x }}</li>{% endfor %}
+      {% for x in (a.eksiler or [])[:2] %}<li class="eksi">{{ x }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div class="alt-satir">
+      {{ rozetler(m) }}
+      {{ menu_izi(m) }}
+      <span class="sag">
+        <label class="secim"><input type="checkbox" name="m" value="{{ m.id }}" form="karsilastir-form" class="karsilastir-kutu"> Karşılaştır</label>
+        {{ liste_dugmesi(m) }}
+      </span>
+    </div>
+  </div>
+  <div class="puanlar">
+    {{ kadran(m.puan) }}
+    {{ google(m) }}
+  </div>
+</li>
+{%- endmacro %}

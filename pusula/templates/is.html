@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block baslik %}Hazırlanıyor · Lezzet Pusulası{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <div class="is-kutu" id="is-kutu" data-api="{{ url_for('pusula.is_durumu', is_id=kayit.id) }}">
+    <h1 style="font-size:2rem">
+      {% if kayit.tur == 'tarama' %}Restoranlar toplanıyor
+      {% elif kayit.tur == 'menu' %}Fotoğraflarda menü aranıyor
+      {% elif kayit.tur == 'derin' %}Derin analiz yapılıyor
+      {% else %}Yorumlar yeniden okunuyor{% endif %}
+    </h1>
+    <p>{% if kayit.tur == 'tarama' %}Mekanlar çekiliyor, yorumlar okunup puanlanıyor. Şehrin büyüklüğüne göre bir iki dakika sürebilir; bu sayfa bitince kendiliğinden açılır.{% else %}Birkaç saniye sürer, bitince mekan sayfasına döneceksiniz.{% endif %}</p>
+    <div class="ilerleme" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ kayit.ilerleme }}" aria-label="İlerleme"><span style="width: {{ kayit.ilerleme }}%"></span></div>
+    <div class="is-mesaj" aria-live="polite">{{ kayit.mesaj or 'Başlıyor…' }}</div>
+    <div class="hata-kutu" {% if kayit.durum != 'hata' %}hidden{% endif %}>
+      <b>Bu iş tamamlanamadı:</b> <span>{{ kayit.mesaj }}</span>
+      <p style="margin:8px 0 0"><a href="{{ url_for('pusula.index') }}">Ana sayfaya dön</a></p>
+    </div>
+    <div class="is-log">{{ kayit.log }}</div>
+    <noscript><p><a href="">Durumu yenile</a></p></noscript>
+  </div>
+</div>
+{% endblock %}

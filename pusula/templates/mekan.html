@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% import "_makrolar.html" as mk with context %}
+{% set a = m.analiz or {} %}
+{% set menu = m.menu or {} %}
+{% block baslik %}{{ m.ad }} · {{ sehir.ad }} · Lezzet Pusulası{% endblock %}
+{% block bas %}
+{% if harita_modu == 'leaflet' %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">{% endif %}
+{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <nav class="kirinti" aria-label="Konum"><a href="{{ url_for('pusula.sehir', slug=sehir.slug) }}">{{ sehir.ad }} restoranları</a> / {{ m.ad }}</nav>
+  {% if sans %}
+  <div class="sans" role="status"><b>Bugün bunu dene!</b> Filtrelerine uyan en iyi mekanlar arasından seçildi.
+    <a href="{{ url_for('pusula.rastgele', slug=sehir.slug) }}">Başka bir tane seç</a></div>
+  {% endif %}
+
+  <div class="mekan-bas">
+    <div>
+      <h1>{{ m.ad }}{% if m.kaynak == 'demo' %}<span class="demo-etiket">demo</span>{% endif %}</h1>
+      <div class="kunye">
+        <span>{{ m.kategori|kat_emoji }} {{ m.birincil_tur_adi or (m.kategori|kat_adi) }}</span>
+        {% if m.ilce %}<span>{{ m.ilce }}</span>{% endif %}
+        {% if m.fiyat_etiketi %}<span title="Kişi başı fiyat">{{ m.fiyat_etiketi }}</span>{% endif %}
+        {% if m.acik is true %}<span class="acik">Şu an açık</span>{% elif m.acik is false %}<span class="kapali">Şu an kapalı</span>{% endif %}
+      </div>
+      <div class="alt-satir" style="margin-top:10px">{{ mk.rozetler(m) }}</div>
+    </div>
+    <div class="buyuk-puan">
+      {{ mk.kadran(m.puan, etiket=False) }}
+      <div class="detay">
+        <b>Pusula Puanı</b>
+        {{ mk.google(m) }}
+        {% if sira %}<span>{{ sehir.ad|bulunma }} {{ toplam }} mekan arasında <b>{{ sira }}.</b></span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if fotolar %}
+  {% set n = [fotolar|length, 5]|min %}
+  <div class="galeri {% if n < 5 %}az{% endif %} {% if n == 1 %}tek{% endif %}" style="--adet: {{ n }}">
+    {% for f in fotolar[:5] %}
+    <a href="{{ url_for('pusula.foto', foto_id=f.id) }}" target="_blank" rel="noopener"><img src="{{ url_for('pusula.foto', foto_id=f.id) }}" alt="{{ m.ad }} fotoğrafı {{ loop.index }}" loading="lazy"></a>
+    {% endfor %}
+  </div>
+  {% set yazarlar = fotolar[:5]|map(attribute='yazar')|select|unique|list %}
+  {% if yazarlar and m.kaynak != 'demo' %}<p class="galeri-not">Fotoğraflar: {{ yazarlar|join(', ') }} (Google Haritalar)</p>{% endif %}
+  {% endif %}
+
+  <div class="mekan-duzen">
+    <div>
+      <section class="panel">
+        <h2>Yorumlar ne diyor?</h2>
+        <p class="alt-baslik">
+          {% if a.yontem == 'claude' %}{{ a.yorum_adedi }} yorum Claude ile özetlendi.{% else %}{{ a.yorum_adedi or 0 }} yorum kural tabanlı analizle özetlendi.{% endif %}
+          {% if m.derin_analiz_tarihi %} Derin analiz {{ m.derin_analiz_tarihi|once }} yapıldı.{% endif %}
+        </p>
+        {% if a.ozet %}<p>{{ a.ozet }}</p>{% endif %}
+        <div class="iki-sutun">
+          <div>
+            <h3 class="arti">Artıları</h3>
+            {% if a.artilar %}<ul class="madde arti">{% for x in a.artilar %}<li>{{ x }}</li>{% endfor %}</ul>
+            {% else %}<p class="kucuk-not">Yorumlarda öne çıkan bir artı yok.</p>{% endif %}
+          </div>
+          <div>
+            <h3 class="eksi">Eksileri</h3>
+            {% if a.eksiler %}<ul class="madde eksi">{% for x in a.eksiler %}<li>{{ x }}</li>{% endfor %}</ul>
+            {% else %}<p class="kucuk-not">Yorumlarda tekrar eden bir şikayet yok.</p>{% endif %}
+          </div>
+        </div>
+        {% if a.one_cikan_lezzetler %}
+        <div class="yoresel" style="margin:18px 0 0"><b>Öne çıkan lezzetler:</b>
+          {% for y in a.one_cikan_lezzetler %}<a class="cip" href="{{ url_for('pusula.sehir', slug=sehir.slug, q=y) }}">{{ y }}</a>{% endfor %}
+        </div>
+        {% endif %}
+        {% if a.kimlere_uygun %}<p style="margin:14px 0 0"><b>Kimlere uygun:</b> {{ a.kimlere_uygun|join(', ') }}</p>{% endif %}
+        {% if a.uyarilar %}<ul class="notlar">{% for u in a.uyarilar %}<li>{{ u }}</li>{% endfor %}</ul>{% endif %}
+        {% if m.google_ozet %}
+        <div class="formul"><b>Google'ın özeti:</b> {{ m.google_ozet }}{% if m.google_ozet_aciklama %} <small>({{ m.google_ozet_aciklama }})</small>{% endif %}</div>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <h2>Puan dökümü</h2>
+        <p class="alt-baslik">Kriter puanları yorumlardan çıkarıldı. Sağdaki sayı senin verdiğin ağırlık.</p>
+        {% for kod, ad in KRITERLER.items() %}
+          {% set d = (a.kriterler or {}).get(kod) %}
+          <div class="kriter">
+            <span>{{ ad }} <span class="agirlik">%{{ agirlik[kod] }}</span></span>
+            <span class="cubuk">{% if d %}<span class="{{ d|renk }}" style="width: {{ d * 10 }}%"></span>{% endif %}</span>
+            <span class="deger">{{ d if d else '–' }}</span>
+          </div>
+        {% endfor %}
+        <div class="formul">
+          {% set p = m.puan %}
+          Google bileşeni <b>{{ p.google|virgul if p.google is not none else '–' }}</b>
+          {% if p.bayes %}(yorum sayısına göre düzeltilmiş puan {{ p.bayes|virgul(2) }}){% endif %}
+          · Yorum kriterleri <b>{{ p.kriter|virgul if p.kriter is not none else '–' }}</b>
+          {% if p.trend.etki %} · Son 6 ay eğilimi <b>{{ '%+.1f'|format(p.trend.etki)|replace('.', ',') }}</b>{% endif %}
+          → Pusula Puanı <b>{{ p.puan|virgul if p.puan is not none else '–' }}</b>.
+          <a href="{{ url_for('pusula.sehir', slug=sehir.slug) }}#filtre-paneli">Ağırlıkları değiştir</a>
+        </div>
+      </section>
+
+      <section class="panel" id="menu">
+        <h2>Menü</h2>
+        {% if menu.durum == 'bulundu' %}
+          {% if menu.en_yeni_tarih %}
+            <div class="menu-yasi {% if menu.ay_once >= 12 %}eski{% endif %}">📋 En yeni menü fotoğrafı {{ menu.en_yeni_tarih|once }} yüklenmiş ({{ tarih_coz(menu.en_yeni_tarih).strftime('%m.%Y') }})</div>
+            {% if menu.ay_once >= 12 %}<p class="kucuk-not">Fotoğraf bir yıldan eski; fiyatlar büyük ihtimalle değişmiştir.</p>{% endif %}
+          {% else %}
+            <div class="menu-yasi bilinmiyor">📋 Menü bulundu, yüklenme tarihi bilinmiyor</div>
+            {% if menu.tarih_notu %}<p class="kucuk-not">{{ menu.tarih_notu }}</p>{% endif %}
+          {% endif %}
+          {% if menu_fotolari %}
+          <div class="menu-fotolari">
+            {% for f in menu_fotolari %}
+            <figure>
+              <a href="{{ url_for('pusula.foto', foto_id=f.id) }}" target="_blank" rel="noopener"><img src="{{ url_for('pusula.foto', foto_id=f.id) }}" alt="Menü fotoğrafı {{ loop.index }}" loading="lazy"></a>
+              <figcaption>{% if f.yukleme_tarihi %}<b>{{ f.yukleme_tarihi|once }}</b> yüklendi{% else %}Tarih bilinmiyor{% endif %}</figcaption>
+            </figure>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if menu.urunler %}
+          <table class="menu-tablo">
+            <caption class="gizli-metin">Menüden okunan ürünler</caption>
+            {% for u in menu.urunler %}
+            <tr><td>{{ u.ad }}<span class="kat">{{ u.kategori }}</span></td><td>{{ ('₺' ~ (u.fiyat|int|bin)) if u.fiyat else '—' }}</td></tr>
+            {% endfor %}
+          </table>
+          {% if menu.ortalama_fiyat %}<p class="kucuk-not">Ana yemeklerin ortası: yaklaşık ₺{{ menu.ortalama_fiyat|bin }}.</p>{% endif %}
+          {% endif %}
+          {% if menu.not %}<p class="kucuk-not">{{ menu.not }}</p>{% endif %}
+        {% elif menu.durum == 'yok' %}
+          <p>Menü bulunamadı. {{ menu.not }}</p>
+        {% else %}
+          <p>Bu mekanın fotoğrafları henüz menü için taranmadı.</p>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <h2>Son yorumlar</h2>
+        {% if m.kaynak == 'google' %}<p class="alt-baslik">Google'ın resmi API'si mekan başına 5 yorum veriyor{% if serp_var %}; daha fazlası için derin analiz yapın{% endif %}.</p>{% endif %}
+        {% for y in yorumlar[:20] %}
+        <article class="yorum">
+          <div class="ust-bilgi">
+            <b>{% if y.yazar_url %}<a href="{{ y.yazar_url }}" target="_blank" rel="noopener nofollow">{{ y.yazar or 'Google kullanıcısı' }}</a>{% else %}{{ y.yazar or 'Kullanıcı' }}{% endif %}</b>
+            {% if y.puan %}<span class="yildiz" aria-label="{{ y.puan }} yıldız">{{ '★' * y.puan }}{{ '☆' * (5 - y.puan) }}</span>{% endif %}
+            <span>{{ (y.tarih|once) or y.goreli_tarih }}</span>
+          </div>
+          <p>{{ y.metin or '(Yorumsuz puan)' }}</p>
+        </article>
+        {% else %}
+        <p>Bu mekan için yorum yok.</p>
+        {% endfor %}
+      </section>
+    </div>
+
+    <aside>
+      <section class="panel eylem-yigini">
+        {{ mk.liste_dugmesi(m) }}
+        {% if m.lat %}<a class="dugme ikincil" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination={{ m.lat }},{{ m.lng }}{% if m.kaynak == 'google' %}&destination_place_id={{ m.place_id }}{% endif %}">Yol tarifi al</a>{% endif %}
+        {% if m.maps_url %}<a class="dugme ikincil" target="_blank" rel="noopener" href="{{ m.maps_url }}">Google Haritalar'da aç</a>{% endif %}
+        {% if m.kaynak == 'google' %}
+          {% if claude_var %}
+          <form method="post" action="{{ url_for('pusula.menu_tara', mekan_id=m.id) }}"><button class="dugme ikincil" type="submit">{{ 'Menüyü yeniden tara' if menu.durum else 'Fotoğraflarda menü ara' }}</button></form>
+          {% endif %}
+          {% if serp_var %}
+          <form method="post" action="{{ url_for('pusula.derin_analiz', mekan_id=m.id) }}"><button class="dugme ikincil" type="submit">Derin analiz (30 yorum + tarihli menü)</button></form>
+          {% endif %}
+        {% endif %}
+        <form method="post" action="{{ url_for('pusula.yeniden_analiz', mekan_id=m.id) }}"><button class="dugme ikincil" type="submit">Yorumları yeniden analiz et</button></form>
+        {% if m.kaynak == 'google' and not serp_var %}<p class="kucuk-not">Tarihli menü fotoğrafları ve daha fazla yorum için <code>SERPAPI_API_KEY</code> ekleyin.</p>{% endif %}
+      </section>
+
+      <section class="panel bilgi">
+        <h2>Bilgiler</h2>
+        <dl>
+          {% if m.adres %}<div><dt>Adres</dt><dd>{{ m.adres }}</dd></div>{% endif %}
+          {% if m.telefon %}<div><dt>Telefon</dt><dd><a href="tel:{{ m.telefon|replace(' ', '') }}">{{ m.telefon }}</a></dd></div>{% endif %}
+          {% if m.web %}<div><dt>Web sitesi</dt><dd><a href="{{ m.web }}" target="_blank" rel="noopener nofollow">{{ m.web|replace('https://', '')|replace('http://', '')|truncate(34, True, '…') }}</a></dd></div>{% endif %}
+          {% if m.calisma_saatleri %}<div><dt>Çalışma saatleri</dt><dd><ul class="saatler">{% for s in m.calisma_saatleri %}<li>{{ s }}</li>{% endfor %}</ul></dd></div>{% endif %}
+          {% set ozler = [] %}
+          {% for kod, ad in [('vejetaryen','Vejetaryen seçenek'),('paket','Paket servis'),('teslimat','Eve teslimat'),('acik_alan','Açık alan'),('cocuk','Çocuk dostu'),('grup','Gruplara uygun'),('rezervasyon','Rezervasyon'),('alkol','Alkol servisi'),('kahvalti','Kahvaltı'),('otopark','Otopark'),('canli_muzik','Canlı müzik'),('evcil','Evcil hayvan')] %}{% if m.ozellikler.get(kod) %}{% set _ = ozler.append(ad) %}{% endif %}{% endfor %}
+          {% if ozler %}<div><dt>Özellikler</dt><dd class="ozellik-listesi">{% for o in ozler %}<span>{{ o }}</span>{% endfor %}</dd></div>{% endif %}
+        </dl>
+      </section>
+
+      {% if m.lat %}
+      <section class="panel">
+        <h2>Yakındaki benzerler</h2>
+        <div class="harita-kutu" style="height:220px" data-harita-hemen data-veri="mini-harita" data-mod="{{ harita_modu }}">
+          {% if harita_modu == 'yok' %}<div class="harita-yok"><p><small>Harita için <code>GOOGLE_MAPS_JS_KEY</code> gerekli.</small></p></div>{% endif %}
+        </div>
+        <div class="benzerler">
+          {% for b in benzerler %}
+          <a class="benzer" href="{{ url_for('pusula.mekan', mekan_id=b.id) }}">
+            {% if b.kapak %}<img src="{{ url_for('pusula.foto', foto_id=b.kapak) }}" alt="" loading="lazy">{% else %}<span></span>{% endif %}
+            <span><b>{{ b.ad }}</b><small>{{ b.uzaklik|mesafe }} ötede{% if b.fiyat_etiketi %} · {{ b.fiyat_etiketi }}{% endif %}</small></span>
+            <span class="mini-puan {{ b.puan.puan|renk }}">{{ b.puan.puan|virgul if b.puan.puan is not none else '–' }}</span>
+          </a>
+          {% else %}<p class="kucuk-not">Bu türde başka mekan yok.</p>{% endfor %}
+        </div>
+        <script type="application/json" id="mini-harita">{{ harita|safe }}</script>
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block betik %}
+{% if harita_modu == 'leaflet' %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>{% endif %}
+{% include "_harita_betik.html" %}
+{% endblock %}

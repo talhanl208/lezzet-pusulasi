@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block icerik %}
+<div class="kap">
+  <div class="bos">
+    <h1 style="font-size:2rem">{{ baslik }}</h1>
+    <p>{{ mesaj }}</p>
+    <a class="dugme" href="{{ url_for('pusula.index') }}">Şehir seç</a>
+  </div>
+</div>
+{% endblock %}

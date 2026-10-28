@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_makrolar.html" as mk with context %}
+{% block baslik %}Gezi listem · Lezzet Pusulası{% endblock %}
+{% block bas %}
+{% if harita_modu == 'leaflet' %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">{% endif %}
+{% endblock %}
+{% block icerik %}
+<div class="kap">
+  <h1 style="margin-top:28px">Gezi listem</h1>
+  {% if not gruplar %}
+  <div class="bos">
+    <h3>Listen boş</h3>
+    <p>Gitmek istediğin mekanları şehir listesinden "Listeme ekle" ile buraya topla; sonra tek tıkla rota oluştur.</p>
+    <a class="dugme" href="{{ url_for('pusula.index') }}">Şehir seç</a>
+  </div>
+  {% endif %}
+  {% for g in gruplar %}
+  <section>
+    <h2 style="margin-top:20px">{{ g.sehir.ad }}</h2>
+    <p class="kucuk-not" style="font-size:.95rem">{{ g.mekanlar|length }} durak{% if g.mekanlar|length > 1 %}, toplam yaklaşık {{ g.km|mesafe }} kuş uçuşu{% endif %}.
+      {% if g.mekanlar|length > 2 %}{% if rota %}<a href="{{ url_for('pusula.gezi_listesi') }}">Eklediğim sıraya dön</a>{% else %}<a href="{{ url_for('pusula.gezi_listesi', rota=1) }}">Rotayı kısalt</a>{% endif %}{% endif %}
+    </p>
+    <div class="liste-duzen">
+      <ol class="rota">
+        {% for m in g.mekanlar %}
+        <li>
+          {% if m.kapak %}<img src="{{ url_for('pusula.foto', foto_id=m.kapak) }}" alt="" loading="lazy">{% else %}<span></span>{% endif %}
+          <span><a href="{{ url_for('pusula.mekan', mekan_id=m.id) }}"><b>{{ m.ad }}</b></a><br><small>{{ m.kategori|kat_emoji }} {{ m.kategori|kat_adi }} · {{ m.fiyat_etiketi }}</small></span>
+          <span style="display:grid; gap:6px; justify-items:end">
+            <span class="mini-puan {{ m.puan.puan|renk }}">{{ m.puan.puan|virgul if m.puan.puan is not none else '–' }}</span>
+            {{ mk.liste_dugmesi(m) }}
+          </span>
+        </li>
+        {% endfor %}
+      </ol>
+      <div>
+        <div class="harita-kutu" data-harita-hemen data-veri="harita-{{ g.sehir.id }}" data-mod="{{ harita_modu }}">
+          {% if harita_modu == 'yok' %}<div class="harita-yok"><p><small>Harita için <code>GOOGLE_MAPS_JS_KEY</code> gerekli.</small></p></div>{% endif %}
+        </div>
+        {% if g.gmaps %}<a class="dugme" href="{{ g.gmaps }}" target="_blank" rel="noopener">Rotayı Google Haritalar'da aç</a>{% endif %}
+      </div>
+    </div>
+    <script type="application/json" id="harita-{{ g.sehir.id }}">{{ g.harita|safe }}</script>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block betik %}
+{% if harita_modu == 'leaflet' %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>{% endif %}
+{% include "_harita_betik.html" %}
+{% endblock %}

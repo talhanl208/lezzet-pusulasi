@@ -1,0 +1,93 @@
+{
+  "places": [
+    {
+      "id": "ChIJ_ornek_kebap",
+      "displayName": {"text": "Örnek Usta Kebap Salonu", "languageCode": "tr"},
+      "formattedAddress": "Mevlana Mah. Örnek Cad. No:5, 42030 Karatay/Konya, Türkiye",
+      "shortFormattedAddress": "Mevlana, Örnek Cad. No:5, Karatay",
+      "addressComponents": [
+        {"longText": "Mevlana", "shortText": "Mevlana", "types": ["administrative_area_level_4", "political"]},
+        {"longText": "Karatay", "shortText": "Karatay", "types": ["administrative_area_level_2", "political"]},
+        {"longText": "Konya", "shortText": "Konya", "types": ["administrative_area_level_1", "political"]}
+      ],
+      "location": {"latitude": 37.872, "longitude": 32.505},
+      "rating": 4.6,
+      "userRatingCount": 2310,
+      "priceLevel": "PRICE_LEVEL_MODERATE",
+      "priceRange": {"startPrice": {"currencyCode": "TRY", "units": "400"}, "endPrice": {"currencyCode": "TRY", "units": "600"}},
+      "types": ["turkish_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "primaryType": "turkish_restaurant",
+      "primaryTypeDisplayName": {"text": "Türk Restoranı", "languageCode": "tr"},
+      "googleMapsUri": "https://maps.google.com/?cid=1",
+      "nationalPhoneNumber": "0332 000 00 00",
+      "businessStatus": "OPERATIONAL",
+      "regularOpeningHours": {
+        "openNow": true,
+        "periods": [{"open": {"day": 1, "hour": 11, "minute": 0}, "close": {"day": 1, "hour": 23, "minute": 0}}],
+        "weekdayDescriptions": ["Pazartesi: 11:00–23:00"]
+      },
+      "reviews": [
+        {
+          "name": "places/ChIJ_ornek_kebap/reviews/abc",
+          "relativePublishTimeDescription": "2 ay önce",
+          "rating": 5,
+          "text": {"text": "Adana kebap enfes, personel çok ilgili. Fiyatlar uygun.", "languageCode": "tr"},
+          "originalText": {"text": "Adana kebap enfes, personel çok ilgili. Fiyatlar uygun.", "languageCode": "tr"},
+          "authorAttribution": {"displayName": "Ayşe K.", "uri": "https://www.google.com/maps/contrib/1", "photoUri": "https://lh3.googleusercontent.com/a"},
+          "publishTime": "2026-08-20T10:00:00Z"
+        },
+        {
+          "name": "places/ChIJ_ornek_kebap/reviews/def",
+          "relativePublishTimeDescription": "5 ay önce",
+          "rating": 2,
+          "text": {"text": "Çok bekledik, garson ilgisizdi.", "languageCode": "tr"},
+          "authorAttribution": {"displayName": "Mehmet T."},
+          "publishTime": "2026-05-01T10:00:00Z"
+        }
+      ],
+      "reviewSummary": {"text": {"text": "Ziyaretçiler kebapları ve uygun fiyatları övüyor.", "languageCode": "tr"}, "disclosureText": {"text": "Gemini ile özetlendi"}},
+      "photos": [
+        {"name": "places/ChIJ_ornek_kebap/photos/p1", "widthPx": 4000, "heightPx": 3000, "authorAttributions": [{"displayName": "Ali", "uri": "https://maps.google.com/contrib/9"}]},
+        {"name": "places/ChIJ_ornek_kebap/photos/p2", "widthPx": 3000, "heightPx": 4000, "authorAttributions": [{"displayName": "Veli"}]}
+      ],
+      "servesVegetarianFood": false,
+      "takeout": true,
+      "delivery": true,
+      "goodForChildren": true,
+      "servesBeer": false,
+      "parkingOptions": {"freeStreetParking": true}
+    },
+    {
+      "id": "ChIJ_otel",
+      "displayName": {"text": "Örnek Otel"},
+      "location": {"latitude": 37.873, "longitude": 32.493},
+      "rating": 4.2, "userRatingCount": 900,
+      "types": ["lodging", "point_of_interest"]
+    },
+    {
+      "id": "ChIJ_kapandi",
+      "displayName": {"text": "Kapanmış Lokanta"},
+      "location": {"latitude": 37.874, "longitude": 32.494},
+      "rating": 4.0, "userRatingCount": 120,
+      "types": ["restaurant", "food"],
+      "businessStatus": "CLOSED_PERMANENTLY"
+    },
+    {
+      "id": "ChIJ_uzak",
+      "displayName": {"text": "Çok Uzak Kafe"},
+      "location": {"latitude": 38.6, "longitude": 33.4},
+      "rating": 4.5, "userRatingCount": 300,
+      "types": ["cafe", "food"]
+    },
+    {
+      "id": "ChIJ_tatli",
+      "displayName": {"text": "Merkez Baklavacısı"},
+      "location": {"latitude": 37.871, "longitude": 32.49},
+      "rating": 4.8, "userRatingCount": 95,
+      "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
+      "types": ["bakery", "food"],
+      "primaryType": "bakery"
+    }
+  ],
+  "nextPageToken": "SAYFA2"
+}

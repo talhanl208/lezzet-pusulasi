@@ -1,0 +1,8 @@
+Flask>=3.0
+requests>=2.31
+python-dotenv>=1.0
+# Windows'ta saat dilimi verisi için gerekli (Linux/macOS'ta zararsız)
+tzdata>=2024.1
+
+# Sadece testler için:
+# pytest>=8

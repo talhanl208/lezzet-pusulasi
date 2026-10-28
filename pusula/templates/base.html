@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block baslik %}Lezzet Pusulası{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@700;800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pusula.css') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <meta name="theme-color" content="#14213d">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='ikon/favicon-32.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='ikon/apple-touch-icon.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pusula">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  {% block bas %}{% endblock %}
+</head>
+<body>
+  <header class="ust">
+    <div class="kap">
+      <a class="logo" href="{{ url_for('pusula.index') }}">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="#5fb3c9" stroke-width="2.5"/><path d="M16 5l4.2 11L16 27l-4.2-11z" fill="#c8432b"/><path d="M16 16l4.2 0L16 27z" fill="#fff" opacity=".9"/></svg>
+        Lezzet Pusulası
+      </a>
+      <nav aria-label="Ana menü">
+        <a href="{{ url_for('pusula.index') }}">Şehirler</a>
+        <a href="{{ url_for('pusula.gezi_listesi') }}">Gezi listem<span class="rozet-sayi" id="liste-sayac" {% if not gezi_listesi %}hidden{% endif %}>{{ gezi_listesi|length }}</span></a>
+        {% if sifre_var and session.get('giris') %}
+        <form method="post" action="{{ url_for('pusula.cikis') }}" style="display:inline"><button class="metin-dugme" style="color:#cfd8e6; text-decoration:none" type="submit">Çıkış</button></form>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  {% if demo %}
+  <div class="demo-serit"><div class="kap">Demo modundasınız: mekanlar, yorumlar ve menüler uydurmadır. Gerçek veri için <code>.env</code> dosyasına <code>GOOGLE_PLACES_API_KEY</code> ekleyin.</div></div>
+  {% endif %}
+  <main>
+    <div class="kap">
+      {% for mesaj in get_flashed_messages() %}<div class="bildirim" role="status">{{ mesaj }}</div>{% endfor %}
+    </div>
+    {% block icerik %}{% endblock %}
+  </main>
+  <footer class="alt-bilgi">
+    <div class="kap">
+      {% if demo %}Demo verisi. {% else %}Mekan bilgileri, puanlar ve yorumlar: Google Haritalar. {% endif %}
+      Pusula Puanı bu uygulamanın kendi hesaplamasıdır; yorum özetleri otomatik üretilir ve hata içerebilir.
+    </div>
+  </footer>
+  {% block betik %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/pusula.js') }}"></script>
+</body>
+</html>
